@@ -5,41 +5,120 @@ import type { User } from '@/types/api.types';
 import { STORAGE_KEYS } from '@constants/storage';
 import { tokenManager } from '@services/api/tokenManager';
 
+export interface MFAData {
+  userid: number;
+  username: string;
+  identifier: string;
+  mfaVerified: boolean;
+  flow: 'register' | 'login';
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  mfaData: MFAData | null;
+  resetEmailOrMobile: string | null;
+  resetToken: string | null;
+  onboardingPending: boolean;
+  hasActivePlan: boolean;
 }
 
 interface AuthActions {
-  setSession: (session: { user: User; accessToken: string; refreshToken: string }) => void;
+  setMfaData: (data: MFAData) => void;
+  setAuthenticated: (accessToken: string, refreshToken?: string) => void;
   updateUser: (user: User) => void;
   clearSession: () => void;
+  setResetEmailOrMobile: (emailOrMobile: string) => void;
+  setResetToken: (token: string) => void;
+  clearResetData: () => void;
+  setOnboardingPending: (pending: boolean) => void;
+  setHasActivePlan: (hasActivePlan: boolean) => void;
 }
 
-/**
- * Reactive mirror of the auth session for UI reads. Raw tokens are owned by
- * `tokenManager` (read directly by the axios interceptors, which run outside
- * React) - this store only persists the `user`/`isAuthenticated` shape so the
- * UI can hydrate instantly on reload without re-fetching `/auth/me`.
- */
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
     (set) => ({
       user: null,
+
       isAuthenticated: false,
 
-      setSession: ({ user, accessToken, refreshToken }) => {
-        tokenManager.setTokens(accessToken, refreshToken);
-        set({ user, isAuthenticated: true });
+      mfaData: null,
+
+      resetEmailOrMobile: null,
+      resetToken: null,
+
+      onboardingPending: false,
+
+      hasActivePlan: false,
+
+      setMfaData: (data) => {
+        set({
+          mfaData: data,
+        });
       },
 
-      updateUser: (user) => set({ user }),
+      setAuthenticated: (accessToken, refreshToken) => {
+        tokenManager.setTokens(accessToken, refreshToken);
+
+        set({
+          isAuthenticated: true,
+          mfaData: null,
+        });
+      },
+
+      updateUser: (user) => {
+        set({
+          user,
+        });
+      },
 
       clearSession: () => {
         tokenManager.clearTokens();
-        set({ user: null, isAuthenticated: false });
+
+        set({
+          user: null,
+          isAuthenticated: false,
+          mfaData: null,
+
+          resetEmailOrMobile: null,
+          resetToken: null,
+
+          onboardingPending: false,
+          hasActivePlan: false,
+        });
+      },
+
+      setHasActivePlan: (hasActivePlan) => {
+        set({ hasActivePlan });
+      },
+
+      setOnboardingPending: (pending) => {
+        set({
+          onboardingPending: pending,
+        });
+      },
+
+      setResetEmailOrMobile: (emailOrMobile) => {
+        set({
+          resetEmailOrMobile: emailOrMobile,
+        });
+      },
+
+      setResetToken: (token) => {
+        set({
+          resetToken: token,
+        });
+      },
+
+      clearResetData: () => {
+        set({
+          resetEmailOrMobile: null,
+          resetToken: null,
+        });
       },
     }),
-    { name: STORAGE_KEYS.AUTH_SESSION },
+    {
+      name: STORAGE_KEYS.AUTH_SESSION,
+    },
   ),
 );

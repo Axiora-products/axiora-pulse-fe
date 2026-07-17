@@ -1,11 +1,22 @@
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    RESET_PASSWORD: '/auth/reset-password',
+    LOGIN: '/v1/auth/login',
+    REGISTER: '/v1/auth/register',
+
+    VERIFY_OTP: '/v1/auth/verifyOTP',
+    RESEND_OTP: '/v1/auth/resendOTP',
+
+    VERIFY_LOGIN: '/v1/auth/verify-login',
+
+    FORGOT_PASSWORD_REQUEST: '/v1/auth/forgot-password/request',
+    FORGOT_PASSWORD_VERIFY: '/v1/auth/forgot-password/verify',
+    FORGOT_PASSWORD_RESET: '/v1/auth/forgot-password/reset',
+
+    CHANGE_PASSWORD: '/v1/auth/change-password',
+
+    LOGOUT: '/v1/auth/logout',
+    REFRESH: '/v1/auth/refresh',
+
     ME: '/auth/me',
   },
   CHAT: {

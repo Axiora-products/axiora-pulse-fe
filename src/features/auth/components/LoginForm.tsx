@@ -21,7 +21,7 @@ export function LoginForm() {
   const login = useLogin();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', remember: false },
+    defaultValues: { username: '', password: '', remember: false },
   });
 
   const onSubmit = (values: LoginFormValues) => login.mutate(values);
@@ -31,14 +31,14 @@ export function LoginForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" noValidate>
         <FormField
           control={form.control}
-          name="email"
+          name="username"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email/Mobile Number</FormLabel>
               <FormControl>
                 <Input
-                  type="email"
-                  autoComplete="email"
+                  type="text"
+                  autoComplete="username"
                   placeholder="Enter Email ID / Mobile Number"
                   className="placeholder:text-sm"
                   {...field}
@@ -83,16 +83,16 @@ export function LoginForm() {
                       type="checkbox"
                       checked={field.value}
                       onChange={(e) => field.onChange(e.target.checked)}
-                      className="peer h-4 w-4 appearance-none rounded border border-gray-300 bg-white"
+                      className="border-input bg-background peer h-4 w-4 appearance-none rounded border"
                     />
 
-                    <span className="pointer-events-none absolute inset-0 hidden items-center justify-center text-xs font-bold text-orange-600 peer-checked:flex">
+                    <span className="text-primary pointer-events-none absolute inset-0 hidden items-center justify-center text-xs font-bold peer-checked:flex">
                       ✓
                     </span>
                   </div>
                 </FormControl>
 
-                <FormLabel htmlFor="remember" className="cursor-pointer text-gray-500">
+                <FormLabel htmlFor="remember" className="text-muted-foreground cursor-pointer">
                   Remember me
                 </FormLabel>
               </FormItem>

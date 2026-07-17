@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AuthLayout } from '@app/layouts/AuthLayout';
 import { DashboardLayout } from '@app/layouts/DashboardLayout';
 import { ErrorLayout } from '@app/layouts/ErrorLayout';
+import { PricingLayout } from '@app/layouts/PricingLayout';
 import { PublicLayout } from '@app/layouts/PublicLayout';
 import { ROUTES } from '@constants/routes';
 
@@ -16,8 +17,10 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     errorElement: <ErrorLayout />,
     children: [
-      { index: true, element: <HomeRedirect /> },
-      { path: ROUTES.PRICING, element: lazyPage(() => import('@pages/PricingPage')) },
+      {
+        index: true,
+        element: <HomeRedirect />,
+      },
     ],
   },
   {
@@ -27,8 +30,22 @@ export const router = createBrowserRouter([
       {
         element: <AuthLayout />,
         children: [
-          { path: ROUTES.LOGIN, element: lazyPage(() => import('@pages/LoginPage')) },
-          { path: ROUTES.REGISTER, element: lazyPage(() => import('@pages/RegisterPage')) },
+          {
+            path: ROUTES.LOGIN,
+            element: lazyPage(() => import('@pages/LoginPage')),
+          },
+          {
+            path: ROUTES.REGISTER,
+            element: lazyPage(() => import('@pages/RegisterPage')),
+          },
+          {
+            path: ROUTES.VERIFY_OTP,
+            element: lazyPage(() => import('@pages/VerifyOtpPage')),
+          },
+          {
+            path: ROUTES.VERIFY_LOGIN,
+            element: lazyPage(() => import('@pages/VerifyLoginPage')),
+          },
           {
             path: ROUTES.FORGOT_PASSWORD,
             element: lazyPage(() => import('@pages/ForgotPasswordPage')),
@@ -46,13 +63,37 @@ export const router = createBrowserRouter([
     errorElement: <ErrorLayout />,
     children: [
       {
+        element: <PricingLayout />,
+        children: [
+          {
+            path: ROUTES.PRICING,
+            element: lazyPage(() => import('@pages/PricingPage')),
+          },
+        ],
+      },
+      {
         element: <DashboardLayout />,
         children: [
-          { path: ROUTES.DASHBOARD, element: lazyPage(() => import('@pages/DashboardPage')) },
-          { path: ROUTES.WORKSPACE, element: lazyPage(() => import('@pages/WorkspacePage')) },
-          { path: ROUTES.AI_CHAT, element: lazyPage(() => import('@pages/AIChatPage')) },
-          { path: ROUTES.SETTINGS, element: lazyPage(() => import('@pages/SettingsPage')) },
-          { path: ROUTES.PROFILE, element: lazyPage(() => import('@pages/ProfilePage')) },
+          {
+            path: ROUTES.DASHBOARD,
+            element: lazyPage(() => import('@pages/DashboardPage')),
+          },
+          {
+            path: ROUTES.WORKSPACE,
+            element: lazyPage(() => import('@pages/WorkspacePage')),
+          },
+          {
+            path: ROUTES.AI_CHAT,
+            element: lazyPage(() => import('@pages/AIChatPage')),
+          },
+          {
+            path: ROUTES.SETTINGS,
+            element: lazyPage(() => import('@pages/SettingsPage')),
+          },
+          {
+            path: ROUTES.PROFILE,
+            element: lazyPage(() => import('@pages/ProfilePage')),
+          },
         ],
       },
     ],

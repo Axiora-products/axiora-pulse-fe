@@ -4,15 +4,20 @@ import { toast } from 'sonner';
 
 import { isApiError } from '@/types/error.types';
 import { ROUTES } from '@constants/routes';
-import { authService, type ResetPasswordPayload } from '@services/auth';
+import { authService } from '@services/auth';
+import { useAuthStore } from '@store/auth.store';
+
+import type { ResetPasswordRequest } from '../types';
 
 export function useResetPassword() {
   const navigate = useNavigate();
+  const clearResetData = useAuthStore((state) => state.clearResetData);
 
   return useMutation({
-    mutationFn: (payload: ResetPasswordPayload) => authService.resetPassword(payload),
+    mutationFn: (payload: ResetPasswordRequest) => authService.resetPassword(payload),
     onSuccess: () => {
-      toast.success('Password updated. Please sign in.');
+      clearResetData();
+      toast.success('Password updated successfully. Please sign in.');
       void navigate(ROUTES.LOGIN);
     },
     onError: (error) => {
