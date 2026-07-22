@@ -1,0 +1,63 @@
+# axiora-pulse-fe/.github/workflows/deploy-dev.yml
+name: Deploy dev
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev-fe
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # VITE_* values are compiled into the bundle at build time.
+      # /api is relative, so the bundle does not hardcode the server IP.
+      - name: Build
+        env:
+          VITE_API_URL: /api
+          VITE_APP_NAME: Axiora Pulse (Dev)
+          VITE_ENABLE_LOGGER: 'true'
+        run: npm run build
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Publish dist
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            dist/ "ubuntu@$HOST:/opt/axiora/dist/"
+
+      - name: Ensure Caddy is running
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "ubuntu@$HOST" \
+            'cd /opt/axiora && docker compose up -d caddy'
+
+      - name: Smoke test
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+        run: curl -fsS "http://$HOST" -o /dev/null && echo "Site responding"
