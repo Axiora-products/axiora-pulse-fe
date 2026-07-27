@@ -1,0 +1,115 @@
+import type { RouteObject } from 'react-router-dom';
+
+import { router } from '@app/router';
+import { ROUTES } from '@constants/routes';
+
+function defined<T>(value: T | undefined): T {
+  if (value === undefined) throw new Error('Expected route to be defined');
+  return value;
+}
+
+function collectPaths(routes: RouteObject[] | undefined): string[] {
+  const paths: string[] = [];
+
+  routes?.forEach((route) => {
+    if (route.path) {
+      paths.push(route.path);
+    }
+
+    paths.push(...collectPaths(route.children));
+  });
+
+  return paths;
+}
+
+function findRoute(routes: RouteObject[] | undefined, path: string): RouteObject | undefined {
+  for (const route of routes ?? []) {
+    if (route.path === path) {
+      return route;
+    }
+
+    const nestedRoute = findRoute(route.children, path);
+
+    if (nestedRoute) {
+      return nestedRoute;
+    }
+  }
+
+  return undefined;
+}
+
+describe('router', () => {
+  it('has four top-level route groups: public, guest-only, protected, and the catch-all', () => {
+    expect(router.routes).toHaveLength(4);
+  });
+
+  it('guards the public, guest, and protected groups with an errorElement', () => {
+    const routes: RouteObject[] = router.routes;
+
+    const publicGroup = defined(routes[0]);
+    const guestGroup = defined(routes[1]);
+    const protectedGroup = defined(routes[2]);
+    const catchAll = defined(routes[3]);
+
+    expect(publicGroup.errorElement).toBeDefined();
+    expect(guestGroup.errorElement).toBeDefined();
+    expect(protectedGroup.errorElement).toBeDefined();
+    expect(catchAll.errorElement).toBeUndefined();
+  });
+
+  it('renders HomeRedirect at the index of the public group', () => {
+    const publicGroup = defined(router.routes[0]);
+
+    expect(publicGroup.children).toHaveLength(1);
+    expect(defined(publicGroup.children?.[0]).index).toBe(true);
+  });
+
+  it('nests every guest-only auth route under the AuthLayout child of the GuestRoute group', () => {
+    const guestGroup = defined(router.routes[1]);
+    const authLayoutRoute = defined(guestGroup.children?.[0]);
+
+    const authPaths = authLayoutRoute.children?.map((route) => route.path);
+
+    expect(authPaths).toEqual([
+      ROUTES.LOGIN,
+      ROUTES.REGISTER,
+      ROUTES.VERIFY_OTP,
+      ROUTES.VERIFY_LOGIN,
+      ROUTES.FORGOT_PASSWORD,
+      ROUTES.RESET_PASSWORD,
+    ]);
+  });
+
+  it('registers all protected application routes', () => {
+    const protectedGroup = defined(router.routes[2]);
+
+    const protectedPaths = collectPaths(protectedGroup.children);
+
+    expect(protectedPaths).toEqual(
+      expect.arrayContaining([
+        ROUTES.PRICING,
+        ROUTES.DASHBOARD,
+        ROUTES.WORKSPACE,
+        ROUTES.AI_CHAT,
+        ROUTES.SETTINGS,
+        ROUTES.PROFILE,
+      ]),
+    );
+  });
+
+  it('registers dashboard routes under the protected route group', () => {
+    const protectedGroup = defined(router.routes[2]);
+
+    expect(findRoute(protectedGroup.children, ROUTES.DASHBOARD)).toBeDefined();
+    expect(findRoute(protectedGroup.children, ROUTES.WORKSPACE)).toBeDefined();
+    expect(findRoute(protectedGroup.children, ROUTES.AI_CHAT)).toBeDefined();
+    expect(findRoute(protectedGroup.children, ROUTES.SETTINGS)).toBeDefined();
+    expect(findRoute(protectedGroup.children, ROUTES.PROFILE)).toBeDefined();
+  });
+
+  it('falls back to a wildcard "*" route for unmatched paths', () => {
+    const catchAll = defined(router.routes[router.routes.length - 1]);
+
+    expect(catchAll.path).toBe('*');
+  });
+});
