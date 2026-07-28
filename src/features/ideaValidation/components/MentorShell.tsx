@@ -1,12 +1,10 @@
 import {
   Bell,
-  Building2,
   FileText,
   Info,
   LayoutGrid,
   LogOut,
   Menu,
-  MessageSquare,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -31,7 +29,7 @@ import { ROUTES } from '@constants/routes';
 import { cn } from '@lib/utils';
 import { useAuthStore } from '@store/auth.store';
 
-interface MentorNavItem {
+export interface MentorNavItem {
   label: string;
   icon: LucideIcon;
   href?: string;
@@ -48,15 +46,25 @@ const OVERVIEW_ITEM: MentorNavItem = {
 };
 
 const WORKSPACE_NAV_ITEMS: MentorNavItem[] = [
-  { label: 'Workspace', icon: Building2, href: ROUTES.WORKSPACE },
-  { label: 'AI Chat', icon: MessageSquare, href: ROUTES.AI_CHAT },
   { label: 'Founder Intelligence', icon: Users, disabled: true },
   { label: 'Startup Intelligence', icon: TrendingUp, disabled: true },
   { label: 'Documents & reports', icon: FileText, disabled: true },
   { label: 'Risk Management', icon: ShieldCheck, disabled: true },
 ];
 
-export function MentorShell({ children }: { children: ReactNode }) {
+interface MentorShellProps {
+  children: ReactNode;
+  overviewItem?: MentorNavItem;
+  navItems?: MentorNavItem[];
+  navSectionLabel?: string;
+}
+
+export function MentorShell({
+  children,
+  overviewItem = OVERVIEW_ITEM,
+  navItems = WORKSPACE_NAV_ITEMS,
+  navSectionLabel = 'Workspace',
+}: MentorShellProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -109,13 +117,19 @@ export function MentorShell({ children }: { children: ReactNode }) {
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2" aria-label="Primary">
-            <MentorNavButton item={OVERVIEW_ITEM} onNavigate={closeNav} />
+            <MentorNavButton item={overviewItem} onNavigate={closeNav} />
 
-            <p className="text-muted-foreground px-3 pt-4 pb-1 text-xs font-medium">Workspace</p>
+            {navItems.length > 0 ? (
+              <>
+                <p className="text-muted-foreground px-3 pt-4 pb-1 text-xs font-medium">
+                  {navSectionLabel}
+                </p>
 
-            {WORKSPACE_NAV_ITEMS.map((item) => (
-              <MentorNavButton key={item.label} item={item} onNavigate={closeNav} />
-            ))}
+                {navItems.map((item) => (
+                  <MentorNavButton key={item.label} item={item} onNavigate={closeNav} />
+                ))}
+              </>
+            ) : null}
           </nav>
 
           <div className="border-border space-y-1 border-t px-3 py-3">

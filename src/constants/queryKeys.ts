@@ -18,6 +18,7 @@ export const queryKeys = {
     all: () => ['workspace'] as const,
     list: () => [...queryKeys.workspace.all(), 'list'] as const,
     detail: (id: number) => [...queryKeys.workspace.all(), 'detail', id] as const,
+    state: (id: number) => [...queryKeys.workspace.all(), 'state', id] as const,
   },
 
   billing: {
@@ -30,5 +31,9 @@ export const queryKeys = {
 
   onboarding: {
     interactiveQuestions: () => ['onboarding', 'interactiveQuestions'] as const,
+  },
+
+  admin: {
+    interactiveQuestions: () => ['admin', 'interactiveQuestions'] as const,
   },
 } as const;
