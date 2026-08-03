@@ -23,9 +23,6 @@ import { getStepFromWorkspaceState } from '../utils/agentStep.utils';
 import { AgentStepProgress } from './AgentStepProgress';
 import { WorkspaceMentorIntake } from './WorkspaceMentorIntake';
 
-// The backend mentor only recognizes a fixed set of phrases as the signal to kick off the
-// orchestration run (see mentor_service.process_message) - there's no separate "market analysis"
-// trigger, so this button sends the phrase it expects. Rendered with a friendlier label below.
 const VALIDATION_TRIGGER_MESSAGE = 'Run validation analysis';
 const VERIFY_DETAILS_MESSAGE = 'Can you verify and summarize the idea details you have so far?';
 
@@ -171,7 +168,7 @@ export function WorkspaceMentorChat({ workspaceId }: WorkspaceMentorChatProps) {
               disabled={chat.isPending}
               onClick={() => send(VALIDATION_TRIGGER_MESSAGE)}
             >
-              Start validation
+              Run the Validations
             </Button>
             <Button
               type="button"
