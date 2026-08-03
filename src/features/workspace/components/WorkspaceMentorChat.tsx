@@ -2,7 +2,13 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import type { OrchestrationRunResponse } from '@/types/orchestration.types';
-import { ChatBubble, ChatInput, MarkdownRenderer, TypingIndicator } from '@components/chat';
+import {
+  ChatBubble,
+  ChatInput,
+  MarkdownRenderer,
+  TypeOnMarkdown,
+  TypingIndicator,
+} from '@components/chat';
 import { ApiErrorMessage } from '@components/common/ApiErrorMessage';
 import { Button } from '@components/ui/button';
 import { IdeaValidationReport } from '@features/ideaValidation/components';
@@ -38,6 +44,9 @@ export function WorkspaceMentorChat({ workspaceId }: WorkspaceMentorChatProps) {
   const chat = useWorkspaceChat(workspaceId);
   const resetMentor = useResetWorkspaceMentor(workspaceId);
   const [draft, setDraft] = useState('');
+  const [typeOnAssistantMessages, setTypeOnAssistantMessages] = useState<Set<number>>(
+    () => new Set(),
+  );
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,6 +71,8 @@ export function WorkspaceMentorChat({ workspaceId }: WorkspaceMentorChatProps) {
 
   function send(message: string) {
     if (!message.trim() || chat.isPending) return;
+    const nextAssistantMessageIndex = (data?.conversation_history.length ?? 0) + 1;
+    setTypeOnAssistantMessages((previous) => new Set(previous).add(nextAssistantMessageIndex));
     chat.mutate(message.trim());
     setDraft('');
   }
@@ -111,19 +122,27 @@ export function WorkspaceMentorChat({ workspaceId }: WorkspaceMentorChatProps) {
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto py-4">
-          {data.conversation_history.map((message, index) =>
-            message.role === 'user' ? (
-              <ChatBubble key={index} align="right" avatarLabel="U">
-                <p className="text-sm whitespace-pre-wrap">
-                  {displayMessageContent(message.content)}
-                </p>
-              </ChatBubble>
-            ) : (
+          {data.conversation_history.map((message, index) => {
+            if (message.role === 'user') {
+              return (
+                <ChatBubble key={index} align="right" avatarLabel="U">
+                  <p className="text-sm whitespace-pre-wrap">
+                    {displayMessageContent(message.content)}
+                  </p>
+                </ChatBubble>
+              );
+            }
+
+            return (
               <ChatBubble key={index} align="left" avatarLabel="AI">
-                <MarkdownRenderer content={message.content} />
+                {typeOnAssistantMessages.has(index) ? (
+                  <TypeOnMarkdown content={message.content} />
+                ) : (
+                  <MarkdownRenderer content={message.content} />
+                )}
               </ChatBubble>
-            ),
-          )}
+            );
+          })}
 
           {chat.isPending ? (
             <ChatBubble align="left" avatarLabel="AI">
