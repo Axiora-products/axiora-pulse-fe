@@ -24,12 +24,12 @@ describe('TypeOnMarkdown', () => {
     expect(screen.queryByText('Hello')).not.toBeInTheDocument();
 
     act(() => {
-      jest.advanceTimersByTime(24);
+      jest.advanceTimersByTime(8);
     });
     expect(screen.getByText('He')).toBeInTheDocument();
 
     act(() => {
-      jest.advanceTimersByTime(36);
+      jest.advanceTimersByTime(12);
     });
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });

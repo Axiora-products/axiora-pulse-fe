@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { MarkdownRenderer } from './MarkdownRenderer';
 
-const CHARACTER_INTERVAL_MS = 12;
+const CHARACTER_INTERVAL_MS = 4;
 
 interface TypeOnMarkdownProps {
   content: string;
