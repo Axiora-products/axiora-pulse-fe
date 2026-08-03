@@ -8,7 +8,6 @@ interface TypeOnMarkdownProps {
   content: string;
 }
 
-/** Reveals an already-completed AI reply incrementally without changing the transport. */
 export function TypeOnMarkdown({ content }: TypeOnMarkdownProps) {
   const [visibleContent, setVisibleContent] = useState('');
 

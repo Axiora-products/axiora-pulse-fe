@@ -9,6 +9,7 @@ export interface Workspace {
   name: string;
   description: string;
   state?: WorkspaceMentorStateValue;
+  is_delete?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -52,7 +53,8 @@ export interface WorkspaceStateResponse {
   updated_at: string;
 }
 
-export type WorkspaceReportAgent = 'idea_validation_agent' | 'market_research_agent' | 'full';
+export type WorkspaceReportAgent =
+  'idea_validation_agent' | 'market_research_agent' | 'survey_intelligence_agent' | 'full';
 export type WorkspaceReportFormat = 'pdf' | 'doc';
 
 export interface ExportWorkspaceReportRequest {
@@ -84,4 +86,11 @@ export interface DeleteWorkspaceResponse {
   status: string;
   message: string;
   workspace_id: number;
+}
+
+export interface RestoreWorkspaceResponse {
+  status: string;
+  message: string;
+  workspace_id: number;
+  is_delete: boolean;
 }
