@@ -1,0 +1,32 @@
+# axiora-pulse-fe/.github/workflows/build-image-dev.yml
+#
+# Frontend M3 (phase 1): on every push to develop, build the frontend image once
+# and push it to ECR as  sha-<gitsha>  + moving  qa  tag.
+#
+# This runs ALONGSIDE the existing deploy-dev.yml (which still builds + rsyncs
+# dist/). It changes nothing about how QA serves the frontend today — it only
+# publishes an immutable image to ECR so the box cutover can pull it.
+#
+# Removed once the box is switched to the containerized frontend and deploy-dev.yml
+# takes over build+deploy (mirrors what we did for the backend).
+
+name: Build image (dev)
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: build-image-fe-dev
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/ci-build-push.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      image_name: axiora-pulse-fe
+      extra_tags: qa
