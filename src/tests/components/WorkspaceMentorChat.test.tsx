@@ -48,20 +48,25 @@ jest.mock('@components/chat', () => ({
   ),
   MarkdownRenderer: ({ content }: { content: string }) => <div>{content}</div>,
   TypingIndicator: () => <div data-testid="typing-indicator">Typing…</div>,
+  TypeOnMarkdown: ({ content }: { content: string }) => <div>{content}</div>,
   ChatInput: ({
     value,
     onChange,
     onSubmit,
     disabled,
     placeholder,
+    attachments = [],
     onAttach,
+    onRemoveAttachment,
   }: {
     value: string;
     onChange: (value: string) => void;
     onSubmit: () => void;
     disabled?: boolean;
     placeholder?: string;
+    attachments?: { id: string | number; name: string; isUploading?: boolean }[];
     onAttach?: (files: FileList) => void;
+    onRemoveAttachment?: (id: string | number) => void;
   }) => (
     <div>
       <textarea
@@ -71,6 +76,25 @@ jest.mock('@components/chat', () => ({
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
       />
+      <input
+        type="file"
+        aria-label="attach-files"
+        multiple
+        onChange={(event) => {
+          if (event.target.files?.length) onAttach?.(event.target.files);
+        }}
+      />
+      <ul>
+        {attachments.map((attachment) => (
+          <li key={attachment.id}>
+            {attachment.name}
+            {attachment.isUploading ? ' (uploading)' : ''}
+            <button type="button" onClick={() => onRemoveAttachment?.(attachment.id)}>
+              Remove {attachment.name}
+            </button>
+          </li>
+        ))}
+      </ul>
       <button type="button" onClick={onSubmit} disabled={disabled}>
         Send
       </button>
@@ -85,6 +109,14 @@ jest.mock('@components/chat', () => ({
       )}
     </div>
   ),
+}));
+
+jest.mock('@features/workspace/api', () => ({
+  workspaceService: { uploadAttachment: jest.fn() },
+}));
+
+jest.mock('sonner', () => ({
+  toast: { success: jest.fn(), error: jest.fn() },
 }));
 
 jest.mock('@features/ideaValidation/components', () => ({
@@ -121,6 +153,7 @@ const mockedUseWorkspaceState = useWorkspaceState as jest.Mock;
 const mockedUseWorkspaceChat = useWorkspaceChat as jest.Mock;
 const mockedUseResetWorkspaceMentor = useResetWorkspaceMentor as jest.Mock;
 const mockedUploadAttachment = workspaceService.uploadAttachment as jest.Mock;
+const mockedToast = toast as jest.Mocked<typeof toast>;
 
 const baseIdea = {
   idea_title: null,
@@ -468,5 +501,195 @@ describe('WorkspaceMentorChat', () => {
     render(<WorkspaceMentorChat workspaceId={1} />);
 
     expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong.');
+  });
+
+  describe('attachments', () => {
+    /** Uploads `files` through the chat input's file picker and waits for the chips to settle. */
+    async function attach(user: ReturnType<typeof userEvent.setup>, files: File[]) {
+      await user.upload(screen.getByLabelText('attach-files'), files);
+    }
+
+    function uploadedAs(name: string) {
+      return {
+        id: `remote-${name}`,
+        name,
+        url: `https://cdn.example.test/uploads/${name}`,
+        mimeType: 'application/octet-stream',
+        sizeBytes: 10,
+      };
+    }
+
+    beforeEach(() => {
+      setup({ data: buildState({ conversation_history: [{ role: 'user', content: 'Hi' }] }) });
+    });
+
+    it('uploads an attached file and replaces the pending chip with the stored one', async () => {
+      const user = userEvent.setup();
+      mockedUploadAttachment.mockResolvedValue(uploadedAs('photo.png'));
+
+      render(<WorkspaceMentorChat workspaceId={1} />);
+      await attach(user, [new File(['x'], 'photo.png', { type: 'image/png' })]);
+
+      expect(mockedUploadAttachment).toHaveBeenCalledWith(1, expect.any(File));
+      expect(await screen.findByText('photo.png')).toBeInTheDocument();
+      expect(screen.queryByText(/uploading/)).not.toBeInTheDocument();
+    });
+
+    it('keeps the local file name when the upload response omits one', async () => {
+      const user = userEvent.setup();
+      mockedUploadAttachment.mockResolvedValue({ ...uploadedAs('notes.txt'), name: '' });
+
+      render(<WorkspaceMentorChat workspaceId={1} />);
+      await attach(user, [new File(['x'], 'notes.txt', { type: 'text/plain' })]);
+
+      expect(await screen.findByText('notes.txt')).toBeInTheDocument();
+    });
+
+    it('drops the attachment and warns when the upload fails', async () => {
+      const user = userEvent.setup();
+      mockedUploadAttachment.mockRejectedValue(new Error('network down'));
+
+      render(<WorkspaceMentorChat workspaceId={1} />);
+      await attach(user, [new File(['x'], 'deck.pdf', { type: 'application/pdf' })]);
+
+      await waitFor(() =>
+        expect(mockedToast.error).toHaveBeenCalledWith('Failed to upload deck.pdf.'),
+      );
+      expect(screen.queryByText('deck.pdf')).not.toBeInTheDocument();
+    });
+
+    it('removes an uploaded attachment on request', async () => {
+      const user = userEvent.setup();
+      mockedUploadAttachment.mockResolvedValue(uploadedAs('photo.png'));
+
+      render(<WorkspaceMentorChat workspaceId={1} />);
+      await attach(user, [new File(['x'], 'photo.png', { type: 'image/png' })]);
+
+      await user.click(await screen.findByRole('button', { name: 'Remove photo.png' }));
+
+      expect(screen.queryByText('photo.png')).not.toBeInTheDocument();
+    });
+
+    it('appends image attachments as markdown images and other files as file links', async () => {
+      const user = userEvent.setup();
+      const chatMutate = jest.fn();
+      setup({
+        data: buildState({ conversation_history: [{ role: 'user', content: 'Hi' }] }),
+        chatMutate,
+      });
+      mockedUploadAttachment
+        .mockResolvedValueOnce(uploadedAs('photo.png'))
+        .mockResolvedValueOnce(uploadedAs('deck.pdf'));
+
+      render(<WorkspaceMentorChat workspaceId={1} />);
+      await attach(user, [
+        new File(['x'], 'photo.png', { type: 'image/png' }),
+        new File(['x'], 'deck.pdf', { type: 'application/pdf' }),
+      ]);
+      await screen.findByText('deck.pdf');
+
+      await user.type(screen.getByLabelText('chat-input'), 'Here you go');
+      await user.click(screen.getByRole('button', { name: 'Send' }));
+
+      expect(chatMutate).toHaveBeenCalledWith({
+        message: [
+          'Here you go',
+          '',
+          '![photo.png](https://cdn.example.test/uploads/photo.png)',
+          '[📁 deck.pdf](https://cdn.example.test/uploads/deck.pdf)',
+        ].join('\n'),
+        attachments: [
+          {
+            type: 'image',
+            name: 'photo.png',
+            url_or_data: 'data:image/png;base64,eA==',
+            mime_type: 'image/png',
+          },
+          {
+            type: 'pdf',
+            name: 'deck.pdf',
+            url_or_data: 'data:application/pdf;base64,eA==',
+            mime_type: 'application/pdf',
+          },
+        ],
+      });
+    });
+
+    it('sends attachments on their own when no message was typed', async () => {
+      const user = userEvent.setup();
+      const chatMutate = jest.fn();
+      setup({
+        data: buildState({ conversation_history: [{ role: 'user', content: 'Hi' }] }),
+        chatMutate,
+      });
+      mockedUploadAttachment.mockResolvedValue(uploadedAs('spec.docx'));
+
+      render(<WorkspaceMentorChat workspaceId={1} />);
+      await attach(user, [new File(['x'], 'spec.docx', { type: 'application/msword' })]);
+      await screen.findByText('spec.docx');
+
+      await user.click(screen.getByRole('button', { name: 'Send' }));
+
+      expect(chatMutate).toHaveBeenCalledWith({
+        message: '[📁 spec.docx](https://cdn.example.test/uploads/spec.docx)',
+        attachments: [
+          {
+            type: 'doc',
+            name: 'spec.docx',
+            url_or_data: 'data:application/msword;base64,eA==',
+            mime_type: 'application/msword',
+          },
+        ],
+      });
+    });
+
+    it('classifies allowed files with an extension not explicitly branched as documents', async () => {
+      // 'archive.zip' and an extension-less 'README' are no longer usable fixtures here: both
+      // are rejected client-side by the extension allowlist before any upload happens (see
+      // 'rejects an unsupported file extension instantly...' above), so this now exercises
+      // getAttachmentType's fallback via allowed-but-unbranched extensions ('csv', 'md')
+      // instead - neither is an image or pdf, and neither is explicitly listed in the
+      // doc-group check, so both should still default to a 'doc' file-link render.
+      const user = userEvent.setup();
+      const chatMutate = jest.fn();
+      setup({
+        data: buildState({ conversation_history: [{ role: 'user', content: 'Hi' }] }),
+        chatMutate,
+      });
+      mockedUploadAttachment
+        .mockResolvedValueOnce(uploadedAs('data.csv'))
+        .mockResolvedValueOnce(uploadedAs('notes.md'));
+
+      render(<WorkspaceMentorChat workspaceId={1} />);
+      await attach(user, [
+        new File(['x'], 'data.csv', { type: 'text/csv' }),
+        new File(['x'], 'notes.md', { type: 'text/markdown' }),
+      ]);
+      await screen.findByText('notes.md');
+
+      await user.click(screen.getByRole('button', { name: 'Send' }));
+
+      // Neither is an image, so both are rendered as file links rather than markdown images.
+      expect(chatMutate).toHaveBeenCalledWith({
+        message: [
+          '[📁 data.csv](https://cdn.example.test/uploads/data.csv)',
+          '[📁 notes.md](https://cdn.example.test/uploads/notes.md)',
+        ].join('\n'),
+        attachments: [
+          {
+            type: 'doc',
+            name: 'data.csv',
+            url_or_data: 'data:text/csv;base64,eA==',
+            mime_type: 'text/csv',
+          },
+          {
+            type: 'doc',
+            name: 'notes.md',
+            url_or_data: 'data:text/markdown;base64,eA==',
+            mime_type: 'text/markdown',
+          },
+        ],
+      });
+    });
   });
 });
