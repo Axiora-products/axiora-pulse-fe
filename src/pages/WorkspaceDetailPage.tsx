@@ -1,15 +1,12 @@
-import {
-  Bot,
-  ClipboardList,
-  FileText,
-  Loader2,
-  ShieldCheck,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
+import { Bot, ClipboardList, Loader2, Paperclip } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 
-import { ROUTES, buildWorkspaceRoute, buildWorkspaceSurveyRoute } from '@constants/routes';
+import {
+  ROUTES,
+  buildWorkspaceAttachmentsRoute,
+  buildWorkspaceRoute,
+  buildWorkspaceSurveyRoute,
+} from '@constants/routes';
 import { MentorShell, type MentorNavItem } from '@features/ideaValidation/components';
 import { WorkspaceMentorChat } from '@features/workspace/components';
 import { useWorkspace } from '@features/workspace/hooks/useWorkspaces';
@@ -34,10 +31,15 @@ export default function WorkspaceDetailPage() {
       href: workspaceId ? buildWorkspaceSurveyRoute(workspaceId) : '#',
       disabled: !hasSurvey,
     },
-    { label: 'Founder Intelligence', icon: Users, disabled: true },
-    { label: 'Startup Intelligence', icon: TrendingUp, disabled: true },
-    { label: 'Documents & reports', icon: FileText, disabled: true },
-    { label: 'Risk Management', icon: ShieldCheck, disabled: true },
+    {
+      label: 'Attachments',
+      icon: Paperclip,
+      href: workspaceId ? buildWorkspaceAttachmentsRoute(workspaceId) : '#',
+    },
+    // { label: 'Founder Intelligence', icon: Users, disabled: true },
+    // { label: 'Startup Intelligence', icon: TrendingUp, disabled: true },
+    // { label: 'Documents & reports', icon: FileText, disabled: true },
+    // { label: 'Risk Management', icon: ShieldCheck, disabled: true },
   ];
 
   return (

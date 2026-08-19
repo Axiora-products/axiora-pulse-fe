@@ -5,15 +5,12 @@ import {
   Bot,
   ClipboardList,
   Copy,
-  FileText,
   Link as LinkIcon,
   Loader2,
+  Paperclip,
   Plus,
   Share2,
-  ShieldCheck,
   Trash2,
-  TrendingUp,
-  Users,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -39,7 +36,12 @@ import {
   SelectValue,
 } from '@components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/tabs';
-import { ROUTES, buildWorkspaceRoute, buildWorkspaceSurveyRoute } from '@constants/routes';
+import {
+  ROUTES,
+  buildWorkspaceAttachmentsRoute,
+  buildWorkspaceRoute,
+  buildWorkspaceSurveyRoute,
+} from '@constants/routes';
 import { MentorShell, type MentorNavItem } from '@features/ideaValidation/components';
 import {
   useSurveyByWorkspace,
@@ -117,10 +119,15 @@ export default function WorkspaceSurveyPage() {
       icon: ClipboardList,
       href: workspaceId ? buildWorkspaceSurveyRoute(workspaceId) : '#',
     },
-    { label: 'Founder Intelligence', icon: Users, disabled: true },
-    { label: 'Startup Intelligence', icon: TrendingUp, disabled: true },
-    { label: 'Documents & reports', icon: FileText, disabled: true },
-    { label: 'Risk Management', icon: ShieldCheck, disabled: true },
+    {
+      label: 'Attachments',
+      icon: Paperclip,
+      href: workspaceId ? buildWorkspaceAttachmentsRoute(workspaceId) : '#',
+    },
+    // { label: 'Founder Intelligence', icon: Users, disabled: true },
+    // { label: 'Startup Intelligence', icon: TrendingUp, disabled: true },
+    // { label: 'Documents & reports', icon: FileText, disabled: true },
+    // { label: 'Risk Management', icon: ShieldCheck, disabled: true },
   ];
 
   const handleCopyLink = () => {
