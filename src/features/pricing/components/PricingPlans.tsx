@@ -14,8 +14,6 @@ import { useSubscribe } from '@features/pricing/hooks/useSubscribe';
 import { cn } from '@lib/utils';
 import { useAuthStore } from '@store/auth.store';
 
-// ─── Individual plan card ─────────────────────────────────────────────────────
-
 function PlanCard({
   plan,
   billingPeriod,
