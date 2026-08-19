@@ -133,7 +133,7 @@ describe('PricingPlans', () => {
     expect(screen.getAllByText(/₹7,990/).length).toBeGreaterThan(0);
   });
 
-  it('starts the subscription for a paid plan and, on success, proceeds to onboarding', async () => {
+  it('marks the user as having an active plan, shows questionnaire intro, and navigates to questionnaire intro on select', async () => {
     const user = userEvent.setup();
     render(<PricingPlans />);
 
@@ -143,7 +143,8 @@ describe('PricingPlans', () => {
     const starterCard = within(desktopGrid as HTMLElement)
       .getByText('Starter Plan')
       .closest('.rounded-2xl');
-    if (!starterCard) throw new Error('starter card not found');
+
+    expect(starterCard).not.toBeNull();
 
     await user.click(
       within(starterCard as HTMLElement).getByRole('button', { name: 'Choose plan' }),
