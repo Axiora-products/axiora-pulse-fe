@@ -117,7 +117,10 @@ export function UserGrowthChart() {
                 content={
                   <ChartTooltipContent
                     labelFormatter={(_, payload) => {
-                      const row = payload?.[0]?.payload as ChartRow | undefined;
+                      const first = Array.isArray(payload)
+                        ? (payload[0] as { payload?: ChartRow } | undefined)
+                        : undefined;
+                      const row = first?.payload;
                       return row ? formatTooltipLabel(row.period, granularity) : '';
                     }}
                   />
