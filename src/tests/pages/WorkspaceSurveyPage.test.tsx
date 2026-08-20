@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError, AxiosHeaders } from 'axios';
 import type { ReactNode } from 'react';
@@ -143,6 +143,7 @@ describe('WorkspaceSurveyPage', () => {
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     jest.clearAllMocks();
   });
 
@@ -319,18 +320,17 @@ describe('WorkspaceSurveyPage', () => {
     });
 
     it('scrolls the newly added question into view and focuses it', async () => {
-      jest.useFakeTimers();
-      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      const user = userEvent.setup();
       const scrollIntoView = jest.fn();
       Element.prototype.scrollIntoView = scrollIntoView;
 
       renderPage();
 
       await user.click(screen.getByRole('button', { name: /Add Question/ }));
-      jest.runOnlyPendingTimers();
 
-      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
-      jest.useRealTimers();
+      await waitFor(() => {
+        expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+      });
     });
 
     it('edits a question’s text', async () => {
@@ -350,7 +350,7 @@ describe('WorkspaceSurveyPage', () => {
 
       expect(questionCard(0).queryByText('Answer Options')).not.toBeInTheDocument();
 
-      await user.click(questionCard(0).getByRole('combobox'));
+      await user.click(questionCard(0).getByRole('combobox', { name: 'Question Type' }));
       await user.click(await screen.findByRole('option', { name: 'Checkboxes (Multi Select)' }));
 
       expect(questionCard(0).getByText('Answer Options')).toBeInTheDocument();
@@ -451,7 +451,9 @@ describe('WorkspaceSurveyPage', () => {
       await user.clear(screen.getByDisplayValue('What is your biggest challenge?'));
       await user.click(screen.getByRole('button', { name: /Save & Publish Survey/ }));
 
-      expect(mockedToast.error).toHaveBeenCalledWith('Question 1 text cannot be empty.');
+      expect(mockedToast.error).toHaveBeenCalledWith(
+        expect.stringMatching(/Question 1: Question text cannot be empty/i),
+      );
       expect(mutate).not.toHaveBeenCalled();
     });
 
@@ -472,7 +474,81 @@ describe('WorkspaceSurveyPage', () => {
       await user.click(screen.getByRole('button', { name: /Save & Publish Survey/ }));
 
       expect(mockedToast.error).toHaveBeenCalledWith(
-        'Question 1 (radio) must have at least 2 options.',
+        expect.stringMatching(/Question 1: Choice-based questions must have at least 2 options/i),
+      );
+      expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a save when duplicate questions exist in the survey', async () => {
+      const user = userEvent.setup();
+      mockedUseSurveyByWorkspace.mockReturnValue({
+        data: {
+          ...survey,
+          questions: [
+            { id: 1, question: 'What is your challenge?', questionType: 'text', options: [] },
+            {
+              id: 2,
+              question: 'what is your challenge?',
+              questionType: 'radio',
+              options: ['A', 'B'],
+            },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+      const mutate = mockUpdate();
+      renderPage();
+
+      await user.click(screen.getByRole('button', { name: /Save & Publish Survey/ }));
+
+      expect(mockedToast.error).toHaveBeenCalledWith(expect.stringMatching(/Duplicate question/i));
+      expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a save when duplicate options exist in a question', async () => {
+      const user = userEvent.setup();
+      mockedUseSurveyByWorkspace.mockReturnValue({
+        data: {
+          ...survey,
+          questions: [
+            { id: 1, question: 'How often?', questionType: 'radio', options: ['Daily', 'daily'] },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+      const mutate = mockUpdate();
+      renderPage();
+
+      await user.click(screen.getByRole('button', { name: /Save & Publish Survey/ }));
+
+      expect(mockedToast.error).toHaveBeenCalledWith(expect.stringMatching(/Duplicate option/i));
+      expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a save when an option value is empty', async () => {
+      const user = userEvent.setup();
+      mockedUseSurveyByWorkspace.mockReturnValue({
+        data: {
+          ...survey,
+          questions: [
+            { id: 1, question: 'How often?', questionType: 'radio', options: ['Daily', '   '] },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+      const mutate = mockUpdate();
+      renderPage();
+
+      await user.click(screen.getByRole('button', { name: /Save & Publish Survey/ }));
+
+      expect(mockedToast.error).toHaveBeenCalledWith(
+        expect.stringMatching(/Option cannot be empty/i),
       );
       expect(mutate).not.toHaveBeenCalled();
     });
@@ -490,18 +566,71 @@ describe('WorkspaceSurveyPage', () => {
             {
               question_text: 'What is your biggest challenge?',
               question_type: 'text',
-              target_hypothesis: null,
               options: null,
             },
             {
               question_text: 'How often?',
               question_type: 'radio',
-              target_hypothesis: null,
               options: ['Daily', 'Weekly'],
             },
           ],
         },
         expect.any(Object),
+      );
+    });
+
+    it('saves optional questions with the (Optional) suffix', async () => {
+      const user = userEvent.setup();
+      const mutate = mockUpdate();
+      renderPage();
+
+      await user.click(questionCard(0).getByRole('combobox', { name: 'Requirement' }));
+      await user.click(await screen.findByRole('option', { name: 'Optional' }));
+
+      await user.click(screen.getByRole('button', { name: /Save & Publish Survey/ }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        {
+          questions: [
+            {
+              question_text: 'What is your biggest challenge? (Optional)',
+              question_type: 'text',
+              options: null,
+            },
+            {
+              question_text: 'How often?',
+              question_type: 'radio',
+              options: ['Daily', 'Weekly'],
+            },
+          ],
+        },
+        expect.any(Object),
+      );
+    });
+
+    it('parses existing optional questions from backend and populates requirement dropdown', () => {
+      mockedUseSurveyByWorkspace.mockReturnValue({
+        data: {
+          ...survey,
+          questions: [
+            {
+              id: 1,
+              question: 'Tell us your thoughts (Optional)',
+              questionType: 'text',
+              options: [],
+            },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+
+      renderPage();
+
+      expect(screen.getByDisplayValue('Tell us your thoughts')).toBeInTheDocument();
+      expect(questionCard(0).getByRole('combobox', { name: 'Requirement' })).toHaveTextContent(
+        'Optional',
       );
     });
 
