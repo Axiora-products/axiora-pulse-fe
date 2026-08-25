@@ -53,7 +53,7 @@ function GoogleLoginButtonInner({ text = 'continue_with' }: GoogleLoginButtonPro
           }}
           theme={resolvedTheme === 'dark' ? 'filled_black' : 'outline'}
           size="large"
-          shape="rectangular"
+          shape="pill"
           text={text}
           width="320"
           useOneTap={false}
