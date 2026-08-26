@@ -1,4 +1,4 @@
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { toast } from 'sonner';
 
 import { appConfig } from '@config/app.config';
@@ -40,7 +40,7 @@ function GoogleLoginButtonInner({ text = 'continue_with' }: GoogleLoginButtonPro
 
       <div className="flex justify-center" aria-busy={googleLogin.isPending}>
         <GoogleLogin
-          onSuccess={(credentialResponse) => {
+          onSuccess={(credentialResponse: CredentialResponse) => {
             const credential = credentialResponse.credential;
             if (!credential) {
               toast.error('Google did not return a credential. Please try again.');
