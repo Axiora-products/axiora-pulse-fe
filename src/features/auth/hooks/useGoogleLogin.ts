@@ -18,6 +18,7 @@ export function useGoogleLogin() {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const setHasActivePlan = useAuthStore((state) => state.setHasActivePlan);
   const setRole = useAuthStore((state) => state.setRole);
+  const setOnboardingPending = useAuthStore((state) => state.setOnboardingPending);
 
   return useMutation({
     mutationFn: (payload: GoogleLoginRequest) => authService.googleLogin(payload),
@@ -50,8 +51,19 @@ export function useGoogleLogin() {
         setHasActivePlan(payment);
         useAuthStore.getState().setHasCompletedQuestionnaire(interactive_questions);
         useAuthStore.getState().setShowQuestionnaireIntro(!interactive_questions);
+      }
 
-        void navigate(payment ? ROUTES.DASHBOARD : ROUTES.PRICING);
+      // A first-time Google account is a registration: route through onboarding
+      // (welcome + guide video), exactly like the email/password signup flow.
+      if (response.is_new_user) {
+        setOnboardingPending?.(true);
+        void navigate(ROUTES.ONBOARDING);
+        return;
+      }
+
+      // Returning users: route by their post-login payment gate.
+      if (response.auth_actions) {
+        void navigate(response.auth_actions.payment ? ROUTES.DASHBOARD : ROUTES.PRICING);
         return;
       }
 
