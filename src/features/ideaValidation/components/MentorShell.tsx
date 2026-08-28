@@ -13,7 +13,7 @@ import { Link, NavLink } from 'react-router-dom';
 
 import { Logo } from '@components/common/Logo';
 import { ThemeToggle } from '@components/common/ThemeToggle';
-import { Avatar, AvatarFallback } from '@components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,7 +68,13 @@ export function MentorShell({
   const [isNavOpen, setIsNavOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const storeUser = useAuthStore((state) => state.user);
-  const user = storeUser ?? currentUser;
+  const user = currentUser ?? storeUser;
+  const rawAvatar =
+    currentUser !== undefined
+      ? currentUser?.avatarUrl
+      : (storeUser?.avatarUrl ?? storeUser?.avatar_url);
+  const avatarSrc =
+    rawAvatar && typeof rawAvatar === 'string' && rawAvatar.trim() !== '' ? rawAvatar : undefined;
   const displayName = getDisplayName(user);
   const role = useAuthStore((state) => state.role);
   const handleLogout = useLogout();
@@ -168,6 +174,7 @@ export function MentorShell({
                     className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-full py-1 pr-2 pl-1 transition-colors"
                   >
                     <Avatar className="size-8">
+                      <AvatarImage src={avatarSrc} alt="" />
                       <AvatarFallback>
                         {user?.name?.trim() ? (
                           user.name.trim().charAt(0).toUpperCase()
@@ -184,9 +191,6 @@ export function MentorShell({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to={ROUTES.PROFILE}>Profile</Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to={ROUTES.SETTINGS}>Settings</Link>
                   </DropdownMenuItem>
