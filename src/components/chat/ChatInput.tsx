@@ -254,7 +254,7 @@ export function ChatInput({
                 <button
                   type="button"
                   onClick={() => onRemoveAttachment(file.id)}
-                  className="text-muted-foreground hover:text-foreground ml-1.5 focus:outline-none"
+                  className="text-muted-foreground hover:text-foreground ml-1.5 cursor-pointer focus:outline-none"
                   aria-label={`Remove ${file.name}`}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -273,7 +273,7 @@ export function ChatInput({
         placeholder={placeholder ?? 'Describe your Idea...'}
         rows={1}
         style={{ minHeight: '30px', maxHeight: '200px' }}
-        className="w-full resize-none overflow-y-auto border-none bg-transparent p-0 text-sm shadow-none outline-none focus:ring-0"
+        className="text-foreground placeholder:text-muted-foreground w-full resize-none overflow-y-auto border-none bg-transparent p-0 text-sm font-normal shadow-none outline-none focus:ring-0"
         disabled={disabled}
       />
 
@@ -288,7 +288,7 @@ export function ChatInput({
       )}
 
       <div className="mt-2 flex items-center justify-between">
-        <div className="flex items-center gap-1">
+        <div className="text-foreground flex items-center gap-1">
           {onAttach && (
             <div className="relative">
               <input
@@ -376,7 +376,7 @@ export function ChatInput({
         <Button
           type="button"
           size="sm"
-          className="gap-1.5 bg-[#FF4500] font-semibold text-white hover:bg-[#FF4500]/90"
+          className="cursor-pointer gap-1.5 bg-[#FF4500] font-semibold text-white hover:bg-[#FF4500]/90"
           // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- boolean OR, not a fallback
           disabled={disabled || (!value.trim() && attachments.length === 0) || isUploadingAny}
           onClick={onSubmit}

@@ -3,6 +3,8 @@ export const API_ENDPOINTS = {
     LOGIN: '/v1/auth/login',
     REGISTER: '/v1/auth/register',
 
+    GOOGLE: '/v1/auth/google',
+
     ADMIN_LOGIN: '/v1/auth/admin/login',
 
     VERIFY_OTP: '/v1/auth/verifyOTP',
@@ -46,6 +48,7 @@ export const API_ENDPOINTS = {
     REPORT: (workspaceId: number, agentName: string) =>
       `/v1/workspaces/${workspaceId}/reports/${agentName}`,
     REPORT_EXPORT: (workspaceId: number) => `/v1/workspaces/${workspaceId}/reports/export`,
+    CERTIFICATE: (workspaceId: number) => `/v1/workspaces/${workspaceId}/certificate`,
   },
 
   SURVEY: {
@@ -75,6 +78,9 @@ export const API_ENDPOINTS = {
   USER: {
     PROFILE: '/users/me',
     UPDATE_PROFILE: '/users/me',
+    DETAILS: '/users/me/details',
+    AVATAR: '/users/me/avatar',
+    GET_AVATAR: (userId: number | string) => `/users/${userId}/avatar`,
   },
   ORCHESTRATION: {
     RUN: '/v1/orchestration/run',
@@ -95,6 +101,16 @@ export const API_ENDPOINTS = {
   ADMIN: {
     USERS: '/v1/admin/users',
     USER_GROWTH: '/v1/admin/stats/user-growth',
+    DASHBOARD_STATS: '/v1/admin/dashboard/stats',
+    ANALYTICS_USER_GROWTH: '/v1/admin/analytics/user-growth',
+    ANALYTICS_USERS_BY_PLAN: '/v1/admin/analytics/users-by-plan',
+    ANALYTICS_REVENUE: '/v1/admin/analytics/revenue',
+    USER_SURVEYS: '/v1/admin/users/surveys',
+    USER_SURVEY_SUMMARY: (userId: number) => `/v1/admin/users/${userId}/survey-summary`,
+    SURVEY_RESPONSES: (surveyId: number) => `/v1/admin/surveys/${surveyId}/responses`,
+    SURVEY_RESPONSE_DETAIL: (surveyId: number, responseId: number) =>
+      `/v1/admin/surveys/${surveyId}/responses/${responseId}`,
+    SET_USER_STATUS: (userId: number) => `/v1/admin/user-details/${userId}/status`,
   },
 } as const;
 

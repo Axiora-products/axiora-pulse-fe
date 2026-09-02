@@ -37,6 +37,7 @@ export const queryKeys = {
 
   user: {
     profile: () => ['user', 'profile'] as const,
+    details: () => ['user', 'details'] as const,
   },
 
   onboarding: {
@@ -45,8 +46,21 @@ export const queryKeys = {
 
   admin: {
     interactiveQuestions: () => ['admin', 'interactiveQuestions'] as const,
+    dashboardStats: () => ['admin', 'dashboardStats'] as const,
+    analyticsUserGrowth: (period: string) => ['admin', 'analyticsUserGrowth', period] as const,
+    analyticsUsersByPlan: () => ['admin', 'analyticsUsersByPlan'] as const,
+    analyticsRevenue: (period: string) => ['admin', 'analyticsRevenue', period] as const,
     users: (params?: { limit?: number; offset?: number; search?: string }) =>
       ['admin', 'users', params] as const,
     userGrowth: (granularity: 'month' | 'year') => ['admin', 'userGrowth', granularity] as const,
+    userSurveySummary: (userId: number) => ['admin', 'userSurveySummary', userId] as const,
+    surveys: (params?: { limit?: number; offset?: number; search?: string; user_id?: number }) =>
+      ['admin', 'surveys', params] as const,
+    surveyResponses: (
+      surveyId: number,
+      params?: { limit?: number; offset?: number; search?: string },
+    ) => ['admin', 'surveyResponses', surveyId, params] as const,
+    surveyResponseDetail: (surveyId: number, responseId: number) =>
+      ['admin', 'surveyResponseDetail', surveyId, responseId] as const,
   },
 } as const;

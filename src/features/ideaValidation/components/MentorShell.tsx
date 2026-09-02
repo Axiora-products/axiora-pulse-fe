@@ -1,6 +1,5 @@
 import {
   Archive,
-  Info,
   LayoutGrid,
   LogOut,
   Menu,
@@ -13,7 +12,8 @@ import { useState, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
 import { Logo } from '@components/common/Logo';
-import { Avatar, AvatarFallback } from '@components/ui/avatar';
+import { ThemeToggle } from '@components/common/ThemeToggle';
+import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@components/ui/tooltip';
 import { ROUTES } from '@constants/routes';
 import { useCurrentUser, useLogout } from '@features/auth/hooks';
 import { cn } from '@lib/utils';
@@ -56,6 +55,7 @@ interface MentorShellProps {
   overviewItem?: MentorNavItem;
   navItems?: MentorNavItem[];
   navSectionLabel?: string;
+  mainClassName?: string;
 }
 
 export function MentorShell({
@@ -63,11 +63,18 @@ export function MentorShell({
   overviewItem,
   navItems = WORKSPACE_NAV_ITEMS,
   navSectionLabel = 'Workspace',
+  mainClassName,
 }: MentorShellProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const storeUser = useAuthStore((state) => state.user);
-  const user = storeUser ?? currentUser;
+  const user = currentUser ?? storeUser;
+  const rawAvatar =
+    currentUser !== undefined
+      ? currentUser?.avatarUrl
+      : (storeUser?.avatarUrl ?? storeUser?.avatar_url);
+  const avatarSrc =
+    rawAvatar && typeof rawAvatar === 'string' && rawAvatar.trim() !== '' ? rawAvatar : undefined;
   const displayName = getDisplayName(user);
   const role = useAuthStore((state) => state.role);
   const handleLogout = useLogout();
@@ -86,7 +93,7 @@ export function MentorShell({
   const activeOverviewItem = overviewItem ?? defaultOverviewItem;
 
   const footerItems: MentorNavItem[] = [
-    { label: 'Archive', icon: Archive, href: ROUTES.WORKSPACE_ARCHIVE },
+    ...(isAdmin ? [] : [{ label: 'Archive', icon: Archive, href: ROUTES.WORKSPACE_ARCHIVE }]),
     // { label: 'Integrations', icon: Sparkles, disabled: true },
     { label: 'Settings', icon: Settings, href: ROUTES.SETTINGS },
     { label: 'Logout', icon: LogOut, onClick: () => void handleLogout() },
@@ -116,7 +123,7 @@ export function MentorShell({
               type="button"
               aria-label="Close menu"
               onClick={closeNav}
-              className="text-muted-foreground hover:bg-accent flex size-8 items-center justify-center rounded-full transition-colors lg:hidden"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-full transition-colors lg:hidden"
             >
               <X className="size-4" />
             </button>
@@ -145,65 +152,29 @@ export function MentorShell({
           </div>
         </aside>
 
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <header className="border-border flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:h-16 sm:gap-4 sm:px-6">
             <button
               type="button"
               aria-label="Open menu"
               onClick={() => setIsNavOpen(true)}
-              className="text-muted-foreground hover:bg-accent flex size-9 shrink-0 items-center justify-center rounded-full transition-colors lg:hidden"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors lg:hidden"
             >
               <Menu className="size-4" />
             </button>
 
             <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-3">
-              {/* <button
-                type="button"
-                aria-label="Notifications"
-                className="text-muted-foreground hover:bg-accent flex size-9 shrink-0 items-center justify-center rounded-full transition-colors"
-              >
-                <Bell className="size-4" />
-              </button> */}
-
-              <TooltipProvider>
-                <Tooltip delayDuration={200}>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Help"
-                      className="text-muted-foreground hover:bg-accent hidden size-9 shrink-0 items-center justify-center rounded-full transition-colors sm:flex"
-                    >
-                      <Info className="size-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    align="end"
-                    className="bg-card text-card-foreground border-border animate-in fade-in zoom-in z-50 w-[240px] rounded-lg border p-3 shadow-md duration-100"
-                  >
-                    <div className="space-y-2">
-                      <p className="text-foreground border-border border-b pb-1.5 text-xs font-semibold">
-                        Idea Validation Process
-                      </p>
-                      <ol className="text-muted-foreground list-decimal space-y-1.5 pl-4 text-[11px] font-medium">
-                        <li>Create a workspace</li>
-                        <li>Enter your startup idea</li>
-                        <li>Chat with the AI Mentor</li>
-                        <li>Run validation analysis</li>
-                      </ol>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <ThemeToggle />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
                     aria-label="Account menu"
-                    className="hover:bg-accent flex items-center gap-2 rounded-full py-1 pr-2 pl-1 transition-colors"
+                    className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded-full py-1 pr-2 pl-1 transition-colors"
                   >
                     <Avatar className="size-8">
+                      <AvatarImage src={avatarSrc} alt="" />
                       <AvatarFallback>
                         {user?.name?.trim() ? (
                           user.name.trim().charAt(0).toUpperCase()
@@ -214,13 +185,12 @@ export function MentorShell({
                         )}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="hidden text-sm font-medium sm:inline">{displayName}</span>
+                    <span className="text-foreground hidden text-sm font-semibold sm:inline">
+                      {displayName}
+                    </span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to={ROUTES.PROFILE}>Profile</Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to={ROUTES.SETTINGS}>Settings</Link>
                   </DropdownMenuItem>
@@ -233,7 +203,14 @@ export function MentorShell({
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
+          <main
+            className={cn(
+              'min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8',
+              mainClassName,
+            )}
+          >
+            {children}
+          </main>
         </div>
       </div>
     </div>
@@ -244,9 +221,9 @@ function MentorNavButton({ item, onNavigate }: { item: MentorNavItem; onNavigate
   const Icon = item.icon;
 
   const baseClasses =
-    'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors';
-  const idleClasses = 'text-muted-foreground hover:bg-accent hover:text-accent-foreground';
-  const activeClasses = 'bg-primary/10 text-primary';
+    'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors cursor-pointer';
+  const idleClasses = 'text-foreground/80 hover:bg-accent hover:text-foreground font-medium';
+  const activeClasses = 'bg-primary/10 text-primary font-semibold';
 
   if (item.href) {
     return (
