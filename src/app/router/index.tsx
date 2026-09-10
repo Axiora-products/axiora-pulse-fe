@@ -7,10 +7,10 @@ import { ErrorLayout } from '@app/layouts/ErrorLayout';
 import { PricingLayout } from '@app/layouts/PricingLayout';
 import { PublicLayout } from '@app/layouts/PublicLayout';
 import { ROUTES } from '@constants/routes';
+import LandingPage from '@pages/LandingPage';
 
 import { AdminRoute } from './AdminRoute';
 import { GuestRoute } from './GuestRoute';
-import { HomeRedirect } from './HomeRedirect';
 import { lazyPage } from './lazyPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -21,7 +21,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomeRedirect />,
+        element: <LandingPage />,
       },
       {
         path: '/surveys/public/:surveyId',
@@ -162,7 +162,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
   {
     path: '*',
     element: lazyPage(() => import('@pages/NotFoundPage')),
