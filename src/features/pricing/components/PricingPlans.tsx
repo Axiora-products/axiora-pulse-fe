@@ -172,7 +172,7 @@ function PlanCard({
               ₹{staticData.priceMonthly.toLocaleString('en-IN')}
             </span>
             <span className="text-xs font-normal text-neutral-500 dark:text-neutral-400">
-              / month
+              / month / month
             </span>
             {plan.priceMonthly !== undefined ? (
               <span className="sr-only">₹{plan.priceMonthly.toLocaleString('en-IN')}</span>
