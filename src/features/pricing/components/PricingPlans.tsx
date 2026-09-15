@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import type { PricingPlan } from '@/types/api.types';
-import type { BillingPeriod } from '@/types/billing.types';
 import { ApiErrorMessage } from '@components/common/ApiErrorMessage';
 import { Button } from '@components/ui/button';
 import { ROUTES } from '@constants/routes';
@@ -18,10 +17,8 @@ interface StaticPlanConfig {
   id: string;
   name: string;
   description: string;
-  priceMonthly: number;
-  priceYearly: number;
+  // Marketing "was" price shown struck through. The REAL price comes from the API.
   strikePriceMonthly: number;
-  strikePriceYearly: number;
   buttonText: string;
   buttonVariant: 'current' | 'builder' | 'pro';
   headerStyle: 'gray' | 'gradient' | 'pro-gray';
@@ -34,10 +31,7 @@ const STATIC_PLANS_DATA: StaticPlanConfig[] = [
     name: 'Starter',
     description:
       'For students exploring and validating their first startup idea, turning an initial concept into a real-world opportunity.',
-    priceMonthly: 0,
-    priceYearly: 0,
-    strikePriceMonthly: 299,
-    strikePriceYearly: 2990,
+    strikePriceMonthly: 499,
     buttonText: 'Current Plan',
     buttonVariant: 'current',
     headerStyle: 'gray',
@@ -55,10 +49,7 @@ const STATIC_PLANS_DATA: StaticPlanConfig[] = [
     name: 'Builder',
     description:
       'For students building projects and early-stage startups who need deeper validation and research.',
-    priceMonthly: 499,
-    priceYearly: 4990,
     strikePriceMonthly: 999,
-    strikePriceYearly: 9990,
     buttonText: 'Choose Builder',
     buttonVariant: 'builder',
     headerStyle: 'gradient',
@@ -77,10 +68,7 @@ const STATIC_PLANS_DATA: StaticPlanConfig[] = [
     name: 'Pro',
     description:
       'For student founders and power users who need advanced validation, insights, and greater workspace capacity.',
-    priceMonthly: 999,
-    priceYearly: 9990,
     strikePriceMonthly: 1999,
-    strikePriceYearly: 19990,
     buttonText: 'Choose Pro',
     buttonVariant: 'pro',
     headerStyle: 'pro-gray',
@@ -100,10 +88,7 @@ const DEFAULT_STATIC_PLAN: StaticPlanConfig = {
   id: 'starter',
   name: 'Starter',
   description: 'For students exploring and validating their first startup idea.',
-  priceMonthly: 0,
-  priceYearly: 0,
-  strikePriceMonthly: 299,
-  strikePriceYearly: 2990,
+  strikePriceMonthly: 499,
   buttonText: 'Current Plan',
   buttonVariant: 'current',
   headerStyle: 'gray',
@@ -124,14 +109,12 @@ function getStaticPlan(index: number): StaticPlanConfig {
 function PlanCard({
   plan,
   index = 0,
-  billingPeriod,
   onSelect,
   isSubmitting,
   submittingId,
 }: {
   plan: PricingPlan;
   index?: number;
-  billingPeriod: BillingPeriod;
   onSelect: (id: string) => void;
   isSubmitting: boolean;
   submittingId: string | null;
@@ -139,12 +122,13 @@ function PlanCard({
   const planId = String(plan.id);
   const isThisSubmitting = submittingId === planId;
 
-  // Use the static content matching the tier/index
+  // Static content (styling, features, marketing "was" price) matched by tier/index.
   const staticData = getStaticPlan(index);
 
-  const price = billingPeriod === 'monthly' ? staticData.priceMonthly : staticData.priceYearly;
-  const strikePrice =
-    billingPeriod === 'monthly' ? staticData.strikePriceMonthly : staticData.strikePriceYearly;
+  // Real price comes from the API/DB — the single source of truth and exactly what
+  // Razorpay charges. Monthly only.
+  const price = plan.priceMonthly;
+  const strikePrice = staticData.strikePriceMonthly;
 
   return (
     <div className="flex h-full flex-col overflow-visible rounded-2xl bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md dark:bg-neutral-900">
@@ -188,23 +172,14 @@ function PlanCard({
               ₹{price.toLocaleString('en-IN')}
             </span>
             <span className="text-xs font-normal text-neutral-500 dark:text-neutral-400">
-              / {billingPeriod === 'monthly' ? 'month' : 'year'}
+              / month
             </span>
-            {plan.priceMonthly !== undefined ? (
-              <span className="sr-only">
-                ₹
-                {billingPeriod === 'monthly'
-                  ? plan.priceMonthly.toLocaleString('en-IN')
-                  : plan.priceYearly.toLocaleString('en-IN')}
-              </span>
-            ) : null}
           </div>
 
           {/* Strikethrough original price */}
           <div className="mt-1">
             <span className="text-xs font-normal text-neutral-400 line-through dark:text-neutral-500">
-              ₹{strikePrice.toLocaleString('en-IN')} /{' '}
-              {billingPeriod === 'monthly' ? 'month' : 'year'}
+              ₹{strikePrice.toLocaleString('en-IN')} / month
             </span>
           </div>
 
@@ -255,13 +230,11 @@ function PlanCard({
 
 function MobileCarousel({
   plans,
-  billingPeriod,
   onSelect,
   isSubmitting,
   submittingId,
 }: {
   plans: PricingPlan[];
-  billingPeriod: BillingPeriod;
   onSelect: (id: string) => void;
   isSubmitting: boolean;
   submittingId: string | null;
@@ -319,7 +292,6 @@ function MobileCarousel({
                 <PlanCard
                   plan={plan}
                   index={idx}
-                  billingPeriod={billingPeriod}
                   onSelect={onSelect}
                   isSubmitting={isSubmitting}
                   submittingId={submittingId}
@@ -376,36 +348,7 @@ function MobileCarousel({
   );
 }
 
-function BillingToggle({
-  value,
-  onChange,
-}: {
-  value: BillingPeriod;
-  onChange: (v: BillingPeriod) => void;
-}) {
-  return (
-    <div className="border-border bg-muted mx-auto mt-6 inline-flex items-center gap-1 rounded-full border p-1">
-      {(['monthly', 'yearly'] as const).map((period) => (
-        <button
-          key={period}
-          type="button"
-          onClick={() => onChange(period)}
-          className={cn(
-            'cursor-pointer rounded-full px-5 py-1.5 text-sm font-medium capitalize transition-colors',
-            value === period
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          {period === 'monthly' ? 'Monthly' : 'Annually'}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function PricingPlans() {
-  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
   const navigate = useNavigate();
   const setHasActivePlan = useAuthStore((state) => state.setHasActivePlan);
   const setOnboardingPending = useAuthStore((state) => state.setOnboardingPending);
@@ -424,11 +367,10 @@ export function PricingPlans() {
       if (subscribe.isPending) return;
 
       const planList = plans ?? [];
-      const index = planList.findIndex((p) => String(p.id) === planId);
-      const staticData = getStaticPlan(index >= 0 ? index : 0);
       const selectedPlan = planList.find((p) => String(p.id) === planId);
 
-      const isFree = staticData.priceMonthly <= 0 && (selectedPlan?.priceMonthly ?? 0) <= 0;
+      // Free tier (₹0) has no Razorpay plan — skip checkout, go straight in.
+      const isFree = (selectedPlan?.priceMonthly ?? 0) <= 0;
 
       if (isFree) {
         proceedToOnboarding();
@@ -436,7 +378,7 @@ export function PricingPlans() {
       }
 
       subscribe.mutate(
-        { planId, billingPeriod },
+        { planId, billingPeriod: 'monthly' },
         {
           onSuccess: () => proceedToOnboarding(),
           onError: (err) => {
@@ -446,7 +388,7 @@ export function PricingPlans() {
         },
       );
     },
-    [billingPeriod, plans, proceedToOnboarding, subscribe],
+    [plans, proceedToOnboarding, subscribe],
   );
 
   return (
@@ -459,8 +401,6 @@ export function PricingPlans() {
       <p className="mt-2 text-sm font-normal text-neutral-600 sm:text-base dark:text-neutral-400">
         Choose the Plan that fits your business needs
       </p>
-
-      <BillingToggle value={billingPeriod} onChange={setBillingPeriod} />
 
       {isLoading ? (
         <div className="mt-16 flex justify-center">
@@ -482,7 +422,6 @@ export function PricingPlans() {
                 key={String(plan.id)}
                 plan={plan}
                 index={idx}
-                billingPeriod={billingPeriod}
                 onSelect={handleSelect}
                 isSubmitting={subscribe.isPending}
                 submittingId={subscribe.isPending ? (subscribe.variables?.planId ?? null) : null}
@@ -494,7 +433,6 @@ export function PricingPlans() {
           <div className="mt-10 sm:hidden">
             <MobileCarousel
               plans={plans ?? []}
-              billingPeriod={billingPeriod}
               onSelect={handleSelect}
               isSubmitting={subscribe.isPending}
               submittingId={subscribe.isPending ? (subscribe.variables?.planId ?? null) : null}

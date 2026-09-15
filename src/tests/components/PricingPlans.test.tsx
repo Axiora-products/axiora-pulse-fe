@@ -127,15 +127,17 @@ describe('PricingPlans', () => {
     expect(screen.getAllByText('Enterprise').length).toBeGreaterThan(0);
   });
 
-  it('toggles between monthly and yearly pricing', async () => {
-    const user = userEvent.setup();
+  it('shows the real (API) monthly price for each plan, with no billing toggle', () => {
     render(<PricingPlans />);
 
+    // Prices come from the API/DB — the single source of truth and exactly what
+    // Razorpay charges — not from static dummy values.
     expect(screen.getAllByText(/₹799/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/₹1,499/).length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole('button', { name: 'Annually' }));
-
-    expect(screen.getAllByText(/₹7,990/).length).toBeGreaterThan(0);
+    // Monthly only: the yearly toggle has been removed.
+    expect(screen.queryByRole('button', { name: 'Annually' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Monthly' })).toBeNull();
   });
 
   it('marks the user as having an active plan, shows questionnaire intro, and navigates to questionnaire intro on select', async () => {
