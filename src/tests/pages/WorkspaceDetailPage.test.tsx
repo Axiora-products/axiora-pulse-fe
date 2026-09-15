@@ -14,6 +14,10 @@ jest.mock('@features/auth/hooks', () => ({
   useCurrentUser: jest.fn(() => ({ data: null, isLoading: false })),
 }));
 
+jest.mock('@features/settings/hooks/useUserDetails', () => ({
+  useUserDetails: jest.fn(() => ({ data: null, isLoading: false })),
+}));
+
 // WorkspaceMentorChat pulls in `react-markdown` (ESM-only) via `@components/chat`. This page's
 // own composition logic (loading/error/success + MentorShell wiring) doesn't depend on how the
 // chat UI renders internally, so stub the whole components barrel like WorkspacePage.test.tsx does.
@@ -91,7 +95,7 @@ describe('WorkspaceDetailPage', () => {
     expect(screen.getByText('Rocket Idea')).toBeInTheDocument();
   });
 
-  it('falls back to the dashboard route for the AI Mentor nav link when there is no workspace id in the URL', () => {
+  it('falls back to the dashboard route for the AI Co-Founder nav link when there is no workspace id in the URL', () => {
     mockedUseWorkspace.mockReturnValue({ data: undefined, isLoading: false, isError: true });
 
     // Render outside of a matching `/workspace/:workspaceId` route so `useParams` returns no
@@ -102,6 +106,9 @@ describe('WorkspaceDetailPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: /ai mentor/i })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: /ai co-founder/i })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    );
   });
 });
