@@ -22,6 +22,7 @@ jest.mock('react-router-dom', () => ({
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
   ),
+  useNavigate: () => jest.fn(),
 }));
 
 const mockedUseExportWorkspaceReport = useExportWorkspaceReport as jest.Mock;

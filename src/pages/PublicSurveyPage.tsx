@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import type { ApiRequestError } from '@/types/error.types';
 import { Logo } from '@components/common/Logo';
 import { ThemeToggle } from '@components/common/ThemeToggle';
 import { Button } from '@components/ui/button';
@@ -223,6 +224,11 @@ export default function PublicSurveyPage() {
       {
         onSuccess: () => {
           setIsSubmitted(true);
+        },
+        onError: (err) => {
+          // e.g. 403 when the survey owner has reached their response allowance.
+          const apiError = err as ApiRequestError | undefined;
+          toast.error(apiError?.message ?? 'Could not submit your response. Please try again.');
         },
       },
     );

@@ -1,7 +1,6 @@
 import { Award, Download, Loader2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 
 import type { OrchestrationRunResponse } from '@/types/orchestration.types';
 import { Badge } from '@components/ui/badge';
@@ -11,6 +10,7 @@ import {
   useExportWorkspaceReport,
 } from '@features/workspace/hooks/useWorkspaceMentor';
 import type { WorkspaceReportAgent } from '@features/workspace/types';
+import { useApiErrorToast } from '@hooks/useApiErrorToast';
 import { cn } from '@lib/utils';
 
 import { InteractiveSurveyQuestions } from './InteractiveSurveyQuestions';
@@ -333,11 +333,12 @@ function AgentReportCard({
   isDownloadingCertificate?: boolean;
 }) {
   const exportReport = useExportWorkspaceReport(workspaceId);
+  const showApiError = useApiErrorToast();
 
   function handleExport() {
     exportReport.mutate(
       { agent_name: agentName, format: 'pdf' },
-      { onError: () => toast.error('Failed to export the report. Please try again.') },
+      { onError: (err) => showApiError(err, 'Failed to export the report. Please try again.') },
     );
   }
 

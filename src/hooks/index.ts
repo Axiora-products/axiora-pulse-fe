@@ -3,3 +3,4 @@ export { useDebouncedValue } from './useDebouncedValue';
 export { useMediaQuery } from './useMediaQuery';
 export { useLocalStorage } from './useLocalStorage';
 export { useClickOutside } from './useClickOutside';
+export { useApiErrorToast } from './useApiErrorToast';
