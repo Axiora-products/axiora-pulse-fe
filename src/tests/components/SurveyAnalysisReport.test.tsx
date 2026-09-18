@@ -22,6 +22,10 @@ jest.mock('sonner', () => ({
   toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
 
+jest.mock('react-router-dom', () => ({
+  useNavigate: () => jest.fn(),
+}));
+
 const mockedUseSurveyAnalysis = useSurveyAnalysis as jest.Mock;
 const mockedUseRunSurveyAnalysis = useRunSurveyAnalysis as jest.Mock;
 const mockedSurveyService = surveyService as jest.Mocked<typeof surveyService>;

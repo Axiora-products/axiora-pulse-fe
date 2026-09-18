@@ -28,6 +28,8 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { ApiRequestError } from '@/types/error.types';
+import { useApiErrorToast } from '@hooks/useApiErrorToast';
 
 import { surveyService } from '../api/survey.service';
 import { useRunSurveyAnalysis, useSurveyAnalysis } from '../hooks/useSurveys';
@@ -146,6 +148,7 @@ export function SurveyAnalysisReport({
 }: SurveyAnalysisReportProps) {
   const { data: analysisData, isLoading: isAnalysisLoading } = useSurveyAnalysis(survey.id);
   const runAnalysisMutation = useRunSurveyAnalysis(survey.id, workspaceId);
+  const showApiError = useApiErrorToast();
 
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -200,8 +203,14 @@ export function SurveyAnalysisReport({
       downloadAnchor.remove();
       window.URL.revokeObjectURL(url);
       toast.success('Survey intelligence report downloaded successfully.');
-    } catch {
-      // Fallback: If agent report generation fails, export analysis JSON
+    } catch (err) {
+      // A plan gate (402) is not a failure — surface it (with an Upgrade action) and
+      // stop, rather than silently handing over the JSON export.
+      if ((err as ApiRequestError | undefined)?.status === 402) {
+        showApiError(err, "Report export isn't included in your current plan.");
+        return;
+      }
+      // Fallback: if agent report generation genuinely fails, export analysis JSON.
       if (analysis) {
         const dataStr =
           'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(analysis, null, 2));
